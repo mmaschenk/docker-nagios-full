@@ -1,0 +1,75 @@
+#! /usr/bin/env python
+
+"""
+Nagios plugin to check a value returned from a uri in json format.
+
+Copyright (c) 2009 Peter Kropf. All rights reserved.
+
+Example:
+
+Compare the "hostname" field in the json structure returned from
+http://store.example.com/hostname.py against a known value.
+
+    ./check_json hostname buenosaires http://store.example.com/hostname.py
+"""
+
+
+import urllib2
+import simplejson
+import sys
+from optparse import OptionParser
+import base64
+
+prefix = 'JSON'
+
+class nagios:
+    ok       = (0, 'OK')
+    warning  = (1, 'WARNING')
+    critical = (2, 'CRITICAL')
+    unknown  = (3, 'UNKNOWN')
+
+
+def exit(status, message):
+    print prefix + ' ' + status[1] + ' - ' + message
+    sys.exit(status[0])
+
+
+parser = OptionParser(usage='usage: %prog field_name expected_value uri')
+options, args = parser.parse_args()
+
+
+if len(sys.argv) < 3:
+    exit(nagios.unknown, 'missing command line arguments')
+
+field = args[0]
+value = args[1]
+uri = args[2]
+
+try:
+    #handler=urllib2.HTTPSHandler(debuglevel=1)
+    #opener = urllib2.build_opener(handler)
+    #urllib2.install_opener(opener)
+    request = urllib2.Request(uri)
+    username = 'mschenk'
+    password = 'Mark1234!'
+    base64string = base64.encodestring('%s:%s' % (username, password)).replace('\n', '')
+    request.add_header("Authorization", "Basic %s" % base64string)   
+    #request.add_header("Cookie", "sessionId=5jt7mzxmqii7car75y47wvqx0o86eyqy")
+    request.add_header('Cookie', 'TUD-USE-COOKIES=yes; django_language=en-us; filterChoice=1; fe_typo_user=b84fb6f9b145b768cb5cd62d3b5fb98f; __utma=1.1746657823.1425573094.1433140486.1433846366.11; __utmc=1; __utmz=1.1433140486.10.6.utmcsr=google|utmccn=(organic)|utmcmd=organic|utmctr=(not%20provided); sessionid=5jt7mzxmqii7car75y47wvqx0o86eyqy; csrftoken=OdJ5SaH18vRokxHC6PRCsu7ZxdEhG87N; _ga=GA1.3.146260451.1415355044')
+    result = urllib2.urlopen(request)
+
+    #print result.read()
+
+    j = simplejson.load(result)
+
+except urllib2.HTTPError, ex:
+    exit(nagios.unknown, 'invalid uri')
+
+if field not in j:
+    exit(nagios.unknown, 'field: ' + field + ' not present')
+
+if str(j[field]) != value:
+    exit(nagios.critical, str(j[field]) + ' != ' + value)
+
+#exit(nagios.ok, str(j[field]) + ' == ' + value)
+exit(nagios.ok, field + ' == ' + value)

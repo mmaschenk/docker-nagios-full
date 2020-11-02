@@ -1,0 +1,6 @@
+#!/bin/bash
+
+echo "Copying config-files from ${NAGIOS_HOME}/etc-orig to ${NAGIOS_HOME}/etc"
+
+cd ${NAGIOS_HOME}/etc-orig
+tar cf - . | (cd ../etc ; tar xvf -)

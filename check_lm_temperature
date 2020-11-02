@@ -1,0 +1,97 @@
+#! /bin/bash
+
+PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
+
+PROGNAME=`basename $0`
+PROGPATH=`echo $0 | sed -e 's,[\\/][^\\/][^\\/]*$,,'`
+REVISION="1.0.0"
+
+. $PROGPATH/utils.sh
+
+
+print_usage() {
+	echo "Usage: $PROGNAME [ Temperature sensor name's. eg. 'CPU temp' ]"
+}
+
+print_revision() {
+	echo "$PROGNAME"
+	echo "Nagios plugin to monitor the values of sensors detected by lm_sensors package"
+	echo "Version: $REVISION"
+	echo "Egidio Garbin - http://www.gnu.org/licenses/gpl-2.0.txt"
+}
+
+print_help() {	
+	echo ""
+	print_usage
+	echo ""
+	echo "This plugin checks hardware status using the lm_sensors package."
+	echo "First configure lm_sensors with your rights parameters. eg. /etc/sensors"
+	echo "Report OK if all ok or CRITICAL state if an alarm was detected."
+	echo ""
+	print_revision
+	echo ""
+	support
+	exit 0
+}
+
+case "$1" in
+	--help)
+		print_help
+		exit 0
+		;;
+	-h)
+		print_help
+		exit 0
+		;;
+	--version)
+   		print_revision
+		exit 0
+		;;
+	-v)
+		print_revision
+		exit 0
+		;;
+	*)
+		
+		type sensors >& /dev/null
+		RET=$?
+		if [ "$RET" -eq 0 ] ; then
+                        sensors=$( sensors -A | grep ':')
+                        outputdata=$(while read -r line 
+                        do
+                          name=$(echo $line | awk -F: '{print $1}' | sed 's/ /_/g')
+                          data=$(echo $line | awk -F: '{print $2}')
+                          cval=$(echo $data | awk '{print $1}' | sed s/+//)
+                          funit=$(echo $data | awk '{print $3}' | sed s/\(//)
+                          fval=$(echo $data | awk '{print $5}' | sed s/+//)
+                          sunit=$(echo $data | awk '{print $7}' | sed s/+//)
+                          sval=$(echo $data | awk '{print $9}' | sed s/+//)
+                          comb="$funit $sunit"
+                          case "$comb" in
+                             ("high hyst")
+                                printf '%s=%f ' "$name" $cval 
+                                if [ "${aval}" = "ALARM" ]; then
+                                   printf '[ALARM FOUND]'
+                                fi;;
+                             ("high crit")
+                                printf '%s=%f ' "$name" $cval 
+                                if [ "${aval}" = "ALARM" ]; then
+                                   printf '[ALARM FOUND]'
+                                fi;;
+                             (*)
+                                : ;;
+                          esac
+                        done < <(printf '%s\n' "$sensors"))
+                        if [[ $outputdata == *"[ALARM FOUND]"* ]]; then
+                                echo "TEMP CRITICAL | $outputdata"
+                                exit 2
+                        else
+                                echo "TEMP OK | $outputdata"
+                                exit 0
+                        fi
+		else
+			echo "SENSORS UNKNOWN - Command not found"
+			exit -1
+		fi
+		;;
+esac
