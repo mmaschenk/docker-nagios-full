@@ -17,7 +17,7 @@ ENV NAGIOS_HOME=/opt/nagios \
     INITSCRIPT=/sbin/checktelegram.sh
 
 #ADD http://downloads.sourceforge.net/project/nagios/nagios-4.x/nagios-4.0.8/nagios-4.0.8.tar.gz?r=&ts=1433237558&use_mirror=heanet /tmp/nagios.tgz
-COPY nagios-4.0.8.tar.gz /tmp/nagios.tgz
+COPY nagios-4.4.6.tar.gz /tmp/nagios.tgz
 #ADD http://nagios-plugins.org/download/nagios-plugins-2.0.3.tar.gz /tmp/nagios-plugins.tgz
 COPY nagios-plugins-2.0.3.tar.gz /tmp/nagios-plugins.tgz
 COPY bogus_warnings.patch /tmp/
@@ -34,8 +34,7 @@ RUN ( egrep -i  "^${NAGIOS_GROUP}" /etc/group || groupadd $NAGIOS_GROUP ) && \
     # \
     cd /tmp && \
     tar -zxvf nagios.tgz && \
-    cd nagios-4.0.8  && \
-    patch -p1 < /tmp/bogus_warnings.patch && \
+    cd nagios-4.4.6  && \
     ./configure --prefix=${NAGIOS_HOME} \
                 --exec-prefix=${NAGIOS_HOME} \
                 --enable-event-broker \
