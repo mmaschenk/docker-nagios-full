@@ -2,7 +2,7 @@ FROM ghcr.io/mmaschenk/docker-centos-supervisor:rocky.9
 
 # RUN yum -y install yum-plugin-ovl
 RUN yum -y groupinstall 'Development Tools' && \
-    yum -y install httpd iputils perl perl-devel gd gd-devel postfix rsyslog s-nail openssl-devel rrdtool-perl perl-CGI
+    yum -y install httpd iputils perl perl-devel gd gd-devel postfix rsyslog s-nail openssl-devel rrdtool-perl perl-CGI which
 
 ENV NAGIOS_HOME=/opt/nagios \
     NAGIOS_USER=nagios \
@@ -19,7 +19,7 @@ ENV NAGIOS_HOME=/opt/nagios \
 # #ADD http://downloads.sourceforge.net/project/nagios/nagios-4.x/nagios-4.0.8/nagios-4.0.8.tar.gz?r=&ts=1433237558&use_mirror=heanet /tmp/nagios.tgz
 COPY nagios-4.4.6.tar.gz /tmp/nagios.tgz
 # #ADD http://nagios-plugins.org/download/nagios-plugins-2.0.3.tar.gz /tmp/nagios-plugins.tgz
-COPY nagios-plugins-2.0.3.tar.gz /tmp/nagios-plugins.tgz
+COPY nagios-plugins-2.2.1.tar.gz /tmp/nagios-plugins.tgz
 COPY bogus_warnings.patch /tmp/
 COPY check_http_redirect.pl /opt/nagios/libexec/
 # #ADD http://downloads.sourceforge.net/project/nagiosgraph/nagiosgraph/1.5.2/nagiosgraph-1.5.2.tar.gz?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fnagiosgraph%2Ffiles%2Fnagiosgraph%2F&ts=1433322468&use_mirror=heanet /tmp/nagiosgraph.tgz
@@ -56,12 +56,13 @@ RUN cd /tmp/nagios-4.4.6 && \
 #     # Build nagios plugins \
 RUN cd /tmp && \
     tar -zxvf nagios-plugins.tgz && \
-    cd nagios-plugins-2.0.3 && \
+    cd nagios-plugins-release-2.2.1 && \
+    ./tools/setup && \
     ./configure --prefix=${NAGIOS_HOME} \
                 --with-openssl && \
     make && \
     make install && \
-    rm -rf /tmp/nagios-plugins.tgz /tmp/nagios-plugins-2.0.3 && \
+    rm -rf /tmp/nagios-plugins.tgz /tmp/nagios-plugins-2.2.1 && \
     # Hateful thing: nagios is not allowed to ping otherwise! \
     # chmod u+s /bin/ping && \
     # Setup password \
