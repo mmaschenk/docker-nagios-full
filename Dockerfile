@@ -131,3 +131,8 @@ ADD checktelegram.sh telmessage.py init-config nagioscheck.py /sbin/
 
 RUN yum -y install lm_sensors
 ADD sensors3.conf /etc/
+
+RUN yum install wget && \
+    wget https://www.python.org/ftp/python/3.11.7/Python-3.11.7.tgz && \
+    tar xzf Python-3.11.7.tgz && \
+    yum-builddep -y python3
