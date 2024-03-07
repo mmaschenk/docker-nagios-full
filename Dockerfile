@@ -1,9 +1,9 @@
-FROM mmaschenk/centos-supervisor:7
+FROM ghcr.io/mmaschenk/docker-centos-supervisor:rocky.9
 
-RUN yum -y install yum-plugin-ovl
+# RUN yum -y install yum-plugin-ovl
 RUN yum -y groupinstall 'Development Tools' && \
-    yum -y install httpd perl perl-devel "perl(CPAN)" "perl(LWP)" php openssl openssl-devel gd gd-devel mailx postfix rsyslog \
-                   perl-rrdtool perl-GD "perl(CGI)" python3
+    yum -y install httpd iputils perl perl-devel gd gd-devel postfix rsyslog s-nail openssl-devel rrdtool-perl perl-CGI
+
 ENV NAGIOS_HOME=/opt/nagios \
     NAGIOS_USER=nagios \
     NAGIOS_GROUP=nagios \
@@ -16,25 +16,24 @@ ENV NAGIOS_HOME=/opt/nagios \
     NAGIOS_TIMEZONE=Europe/Amsterdam \
     INITSCRIPT=/sbin/checktelegram.sh
 
-#ADD http://downloads.sourceforge.net/project/nagios/nagios-4.x/nagios-4.0.8/nagios-4.0.8.tar.gz?r=&ts=1433237558&use_mirror=heanet /tmp/nagios.tgz
+# #ADD http://downloads.sourceforge.net/project/nagios/nagios-4.x/nagios-4.0.8/nagios-4.0.8.tar.gz?r=&ts=1433237558&use_mirror=heanet /tmp/nagios.tgz
 COPY nagios-4.4.6.tar.gz /tmp/nagios.tgz
-#ADD http://nagios-plugins.org/download/nagios-plugins-2.0.3.tar.gz /tmp/nagios-plugins.tgz
+# #ADD http://nagios-plugins.org/download/nagios-plugins-2.0.3.tar.gz /tmp/nagios-plugins.tgz
 COPY nagios-plugins-2.0.3.tar.gz /tmp/nagios-plugins.tgz
 COPY bogus_warnings.patch /tmp/
 COPY check_http_redirect.pl /opt/nagios/libexec/
-#ADD http://downloads.sourceforge.net/project/nagiosgraph/nagiosgraph/1.5.2/nagiosgraph-1.5.2.tar.gz?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fnagiosgraph%2Ffiles%2Fnagiosgraph%2F&ts=1433322468&use_mirror=heanet /tmp/nagiosgraph.tgz
+# #ADD http://downloads.sourceforge.net/project/nagiosgraph/nagiosgraph/1.5.2/nagiosgraph-1.5.2.tar.gz?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fnagiosgraph%2Ffiles%2Fnagiosgraph%2F&ts=1433322468&use_mirror=heanet /tmp/nagiosgraph.tgz
 COPY nagiosgraph-1.5.2.tar.gz /tmp/nagiosgraph.tgz
 ADD Arana_nagiosstyle-HD.tar.gz /tmp/
-
 
 RUN ( egrep -i  "^${NAGIOS_GROUP}" /etc/group || groupadd $NAGIOS_GROUP ) && \
     ( egrep -i "^${NAGIOS_CMDGROUP}" /etc/group || groupadd $NAGIOS_CMDGROUP ) && \
     ( id -u $NAGIOS_USER || useradd --system $NAGIOS_USER -g $NAGIOS_GROUP -d $NAGIOS_HOME ) && \
     ( id -u $NAGIOS_CMDUSER || useradd --system -d $NAGIOS_HOME -g $NAGIOS_CMDGROUP $NAGIOS_CMDUSER ) && \
-    # \
     cd /tmp && \
     tar -zxvf nagios.tgz && \
-    cd nagios-4.4.6  && \
+    cd nagios-4.4.6
+RUN cd /tmp/nagios-4.4.6 && \
     ./configure --prefix=${NAGIOS_HOME} \
                 --exec-prefix=${NAGIOS_HOME} \
                 --enable-event-broker \
@@ -53,26 +52,26 @@ RUN ( egrep -i  "^${NAGIOS_GROUP}" /etc/group || groupadd $NAGIOS_GROUP ) && \
     rm -rf /tmp/nagios.tgz /tmp/nagios-4.0.8 /tmp/bogus_warnings.patch && \
     # Set timezone \
     echo "use_timezone=$NAGIOS_TIMEZONE" >> ${NAGIOS_HOME}/etc/nagios.cfg && \
-    echo "SetEnv TZ \"${NAGIOS_TIMEZONE}\"" >> /etc/httpd/conf.d/nagios.conf && \
-    # Build nagios plugins \
-    cd /tmp && \
+    echo "SetEnv TZ \"${NAGIOS_TIMEZONE}\"" >> /etc/httpd/conf.d/nagios.conf 
+#     # Build nagios plugins \
+RUN cd /tmp && \
     tar -zxvf nagios-plugins.tgz && \
     cd nagios-plugins-2.0.3 && \
     ./configure --prefix=${NAGIOS_HOME} \
-                --with-openssl &&\
+                --with-openssl && \
     make && \
     make install && \
     rm -rf /tmp/nagios-plugins.tgz /tmp/nagios-plugins-2.0.3 && \
     # Hateful thing: nagios is not allowed to ping otherwise! \
-    chmod u+s /bin/ping && \
+    # chmod u+s /bin/ping && \
     # Setup password \
     htpasswd -c -b -s ${NAGIOS_HOME}/etc/htpasswd.users ${NAGIOSADMIN_USER} ${NAGIOSADMIN_PASS} && \
     chown -R nagios.nagios ${NAGIOS_HOME}/etc/htpasswd.users && \
     # Redirect plugin: \
     chmod 755 /opt/nagios/libexec/check_http_redirect.pl && \
-    echo -e "define command{\n  command_name check_redirect\n  command_line \$USER1\$/check_http_redirect.pl -U \$ARG1\$ -R \$ARG2\$\n}\n" >> ${NAGIOS_HOME}/etc/objects/commands.cfg && \
-    # Setting up nagiosgraph \
-    cd /tmp && \
+    echo -e "define command{\n  command_name check_redirect\n  command_line \$USER1\$/check_http_redirect.pl -U \$ARG1\$ -R \$ARG2\$\n}\n" >> ${NAGIOS_HOME}/etc/objects/commands.cfg
+#     # Setting up nagiosgraph \
+RUN cd /tmp && \
     tar xzf nagiosgraph.tgz && \
     cd /tmp/nagiosgraph-1.5.2 && \
     cp etc/* ${NAGIOS_HOME}/etc && \
@@ -110,7 +109,6 @@ RUN sed -i 's#use lib '"'/opt/nagiosgraph/etc';"'#use lib '"'"${NAGIOS_HOME}"/et
     cd etc && \
     tar cf - . | ( cd ../etc-orig ; tar xvf - ) && \
     # Fix postfix config \
-    echo "myhostname = online-learning.tudelft.nl" >> /etc/postfix/main.cf && \
     echo "inet_protocols = ipv4" >> /etc/postfix/main.cf && \
     # Python modules \
     pip install urllib3==1.24.1 && \
@@ -120,19 +118,11 @@ RUN sed -i 's#use lib '"'/opt/nagiosgraph/etc';"'#use lib '"'"${NAGIOS_HOME}"/et
     cd /tmp/htdocs && cp -r * ${NAGIOS_HOME}/share
 
 RUN PERL_MM_USE_DEFAULT=1 cpan; exit 0
-#RUN cpan install JSON::PP
-#RUN cpan install LWP::Protocol::https
-RUN cpan install OALDERS/LWP-Protocol-https-6.07.tar.gz
+RUN cpan install JSON::PP
+RUN cpan install LWP::Protocol::https
+RUN cpan install GD
 
 ADD nagios.conf apache.conf postfix.conf rsyslog.conf /etc/supervisor/conf.d/
 ADD check_json check_ftp.pl check_lm_voltage check_lm_revs check_lm_temperature ${NAGIOS_HOME}/libexec/
 ADD index.html ${NAGIOS_HOME}/share/
 ADD checktelegram.sh telmessage.py init-config nagioscheck.py /sbin/
-
-RUN yum -y install lm_sensors
-ADD sensors3.conf /etc/
-
-RUN yum install wget && \
-    wget https://www.python.org/ftp/python/3.11.7/Python-3.11.7.tgz && \
-    tar xzf Python-3.11.7.tgz && \
-    yum-builddep -y python3
