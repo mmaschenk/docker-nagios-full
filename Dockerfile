@@ -3,7 +3,7 @@ FROM mmaschenk/centos-supervisor:7
 RUN yum -y install yum-plugin-ovl
 RUN yum -y groupinstall 'Development Tools' && \
     yum -y install httpd perl perl-devel "perl(CPAN)" "perl(LWP)" php openssl openssl-devel gd gd-devel mailx postfix rsyslog \
-                   perl-rrdtool perl-GD "perl(CGI)"
+                   perl-rrdtool perl-GD "perl(CGI)" python3
 ENV NAGIOS_HOME=/opt/nagios \
     NAGIOS_USER=nagios \
     NAGIOS_GROUP=nagios \
@@ -131,4 +131,3 @@ ADD checktelegram.sh telmessage.py init-config nagioscheck.py /sbin/
 
 RUN yum -y install lm_sensors
 ADD sensors3.conf /etc/
-
