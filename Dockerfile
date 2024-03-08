@@ -2,7 +2,7 @@ FROM ghcr.io/mmaschenk/docker-centos-supervisor:rocky.9
 
 # RUN yum -y install yum-plugin-ovl
 RUN yum -y groupinstall 'Development Tools' && \
-    yum -y install httpd iputils perl perl-devel gd gd-devel postfix rsyslog s-nail openssl-devel rrdtool-perl perl-CGI which
+    yum -y install httpd iputils perl perl-devel gd gd-devel postfix rsyslog s-nail openssl-devel rrdtool-perl perl-CGI which procps-ng
 
 ENV NAGIOS_HOME=/opt/nagios \
     NAGIOS_USER=nagios \

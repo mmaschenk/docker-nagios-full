@@ -21,7 +21,7 @@ def main():
     message = '''%s is guarding you. Sleep well...
 There were %s alerts detected in the last %s days''' % (myid, output, numdays)
     telmessage.sendmessage(botid, destid, message)
-    print 'OK - Statusmessage was sent'
+    print('OK - Statusmessage was sent')
 
 
 if __name__ == "__main__":
