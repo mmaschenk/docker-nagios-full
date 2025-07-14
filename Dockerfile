@@ -2,7 +2,7 @@ FROM ghcr.io/mmaschenk/docker-centos-supervisor:rocky.9
 
 # RUN yum -y install yum-plugin-ovl
 RUN yum -y groupinstall 'Development Tools' && \
-    yum -y install httpd iputils perl perl-devel gd gd-devel postfix rsyslog s-nail openssl-devel rrdtool-perl perl-CGI which procps-ng
+    yum -y install httpd iputils perl perl-devel gd gd-devel postfix rsyslog s-nail openssl-devel rrdtool-perl perl-CGI which procps-ng lm_sensors
 
 ENV NAGIOS_HOME=/opt/nagios \
     NAGIOS_USER=nagios \
@@ -127,3 +127,11 @@ ADD nagios.conf apache.conf postfix.conf rsyslog.conf /etc/supervisor/conf.d/
 ADD check_json check_ftp.pl check_lm_voltage check_lm_revs check_lm_temperature ${NAGIOS_HOME}/libexec/
 ADD index.html ${NAGIOS_HOME}/share/
 ADD checktelegram.sh telmessage.py init-config nagioscheck.py /sbin/
+ADD sensors3.conf /etc/
+
+RUN cd /opt && \
+    git clone https://github.com/mmaschenk/irods-nagios-plugin.git && \
+    cd irods-nagios-plugin && \
+    python -m venv .venv && \
+    . .venv/bin/activate && \
+    pip install -r requirements.txt
